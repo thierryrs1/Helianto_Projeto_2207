@@ -1,8 +1,23 @@
 CREATE OR REPLACE PROCEDURE SP_SPS_BEAS_RELATORIO_TEMPO (
-	IN dataini DATE,
-	IN datafim DATE,
+	IN dataini DATE DEFAULT NULL,
+	IN datafim DATE DEFAULT NULL,
 	IN belnr_id INT DEFAULT NULL
 ) AS BEGIN
+
+	DECLARE v_dataini DATE;
+	DECLARE v_datafim DATE;
+	
+	IF :dataini = '' THEN
+		v_dataini = '2000-01-01';
+	ELSE
+		v_dataini = :dataini;
+	END IF;
+	
+	IF :datafim = '' THEN
+		v_datafim = ADD_DAYS(CURRENT_TIMESTAMP, 365);
+	ELSE
+		v_datafim = :datafim;
+	END IF;
 
 	SELECT 
 	    T0."BELNR_ID" as "Documento",
@@ -36,7 +51,8 @@ CREATE OR REPLACE PROCEDURE SP_SPS_BEAS_RELATORIO_TEMPO (
 	INNER JOIN "BEAS_APLATZ" T6
 	    ON T6."APLATZ_ID" = T0."APLATZ_ID"
 	WHERE
-		TO_DATE(T0."ANFZEIT") BETWEEN :dataini AND :datafim
+		(:v_dataini IS NULL OR TO_DATE(T0."ANFZEIT") >= :v_dataini)
+		AND (:v_datafim IS NULL OR TO_DATE(T0."ANFZEIT") <= :v_datafim)
 		AND (:belnr_id IS NULL OR :belnr_id <= 0 OR T0."BELNR_ID" = :belnr_id)
 	ORDER BY  
 	    T0."ANFZEIT" DESC, 
